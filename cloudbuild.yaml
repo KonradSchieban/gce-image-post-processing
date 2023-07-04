@@ -1,0 +1,36 @@
+#  Copyright 2023 Google Inc. All Rights Reserved.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+steps:
+- id: 'Run-Daisy'
+  dir: 'daisy'
+  name: 'gcr.io/compute-image-tools/daisy:latest'
+  args: ['-zone=asia-southeast1-b',
+        '-var:startupScript=${_STARTUP_SCRIPT}',
+        '-var:baseImage=${_BASE_IMAGE}',
+        '-var:builtImageName=${_BUILT_IMAGE_NAME}',
+        '-var:network=${_NETWORK}',
+        '-var:subnet=${_SUBNET}',
+        '-var:compute_service_account=${_COMPUTE_SERVICE_ACCOUNT}',
+        '${_DAISY_WORKFLOW}'
+        ]
+
+substitutions:
+  _STARTUP_SCRIPT: ./script.ps1
+  _BUILT_IMAGE_NAME: custom-windows-image
+  _BASE_IMAGE: projects/windows-cloud/global/images/windows-server-2022-dc-v20230615
+  _DAISY_WORKFLOW: image-post-processing-wf.json
+  _NETWORK: global/networks/my-network
+  _SUBNET: regions/asia-southeast1/subnetworks/my-subnet
+  _COMPUTE_SERVICE_ACCOUNT: default

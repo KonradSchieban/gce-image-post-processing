@@ -1,0 +1,99 @@
+{
+    "Name": "custom-windows-image",
+    "Vars": {
+        "startupScript": "gs://my-storage-bucket/script.ps1",
+        "baseImage": "projects/windows-cloud/global/images/windows-server-2022-dc-v20230615",
+        "builtImageName": "custom-windows-image",
+        "network": {
+          "Value": "global/networks/default",
+          "Description": "Network to use for the import."
+        },
+        "subnet": {
+          "Value": "",
+          "Description": "SubNetwork to use for the import."
+        },
+        "compute_service_account": {
+          "Value": "default",
+          "Description": "Service account that will be used by the created worker instance"
+        }
+      },
+    "Sources": {
+        "script.ps1": "./script.ps1"
+    },
+    "Steps": {
+        "create-disks": {
+            "CreateDisks": [
+                {
+                    "Name": "disk-install",
+                    "SourceImage": "${baseImage}",
+                    "Type": "pd-ssd"
+                }
+            ]
+        },
+        "create-inst-install": {
+            "CreateInstances": [
+                {
+                    "Name": "inst-install",
+                    "Disks": [{"Source": "disk-install"}],
+                    "MachineType": "n1-standard-1",
+                    "StartupScript": "script.ps1",
+                    "networkInterfaces": [
+                        {
+                          "network": "${network}",
+                          "subnetwork": "${subnet}",
+                          "accessConfigs": []
+                        }
+                    ],
+                    "ServiceAccounts": [
+                        {
+                          "Email": "${compute_service_account}",
+                          "Scopes": ["https://www.googleapis.com/auth/devstorage.read_write"]
+                        }
+                    ]
+                }
+            ]
+        },
+        "wait-for-inst-install": {
+            "TimeOut": "1h",
+            "waitForInstancesSignal": [
+                {
+                    "Name": "inst-install",
+                    "Stopped": true,
+                    "SerialOutput": {
+                      "Port": 1,
+                      "SuccessMatch": "Script executed successfully",
+                      "FailureMatch": ["Script executed with errors"],
+                      "StatusMatch": "Script status:"
+                    }
+                  }
+            ]
+        },
+        "stop-instance": {
+            "StopInstances": {
+               "Instances":["inst-install"]
+             }
+        },
+        "create-image": {
+            "CreateImages": [
+                {
+                    "Name": "${builtImageName}",
+                    "SourceDisk": "disk-install",
+                    "NoCleanup": true,
+                    "ExactName": true
+                }
+            ]
+        },
+        "delete-inst-install": {
+            "DeleteResources": {
+                "Instances": ["inst-install"]
+            }
+        }
+    },
+    "Dependencies": {
+        "create-inst-install": ["create-disks"],
+        "wait-for-inst-install": ["create-inst-install"],
+        "stop-instance": ["wait-for-inst-install"],
+        "create-image": ["stop-instance"],
+        "delete-inst-install": ["create-image"]
+    }
+}
