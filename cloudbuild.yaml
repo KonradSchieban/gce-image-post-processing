@@ -16,7 +16,7 @@ steps:
 - id: 'Run-Daisy'
   dir: 'daisy'
   name: 'gcr.io/compute-image-tools/daisy:latest'
-  args: ['-zone=asia-southeast1-b',
+  args: ['-zone=${_ZONE}',
         '-var:startupScript=${_STARTUP_SCRIPT}',
         '-var:baseImage=${_BASE_IMAGE}',
         '-var:builtImageName=${_BUILT_IMAGE_NAME}',
@@ -34,3 +34,4 @@ substitutions:
   _NETWORK: global/networks/my-network
   _SUBNET: regions/asia-southeast1/subnetworks/my-subnet
   _COMPUTE_SERVICE_ACCOUNT: default
+  _ZONE: asia-southeast1-a
